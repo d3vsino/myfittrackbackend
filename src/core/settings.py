@@ -116,7 +116,7 @@ CORS_ALLOWED_ORIGIN_REGEXS = [
 ]
 # CORS settings
 CORS_ALLOWED_ORIGINS = [
-    "https://myfittrack.vercel.app/",
+    "https://myfittrack.vercel.app",
     
     # Add other origins as needed
 ]
