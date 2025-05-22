@@ -25,7 +25,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ["https://my-fit-track.onrender.com/"]
 
 
 # Application definition
@@ -112,7 +112,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # CORS settings
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # Vite/Vue default
+    "https://myfittrackfrontend.vercel.com/",
+    r"^capacitor:\/\/localhost$"  
     # Add other origins as needed
 ]
 
