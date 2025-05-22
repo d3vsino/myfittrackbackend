@@ -112,11 +112,6 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 
-# CORS settings
-CORS_ALLOWED_ORIGINS = [
-    "https://myfittrack.vercel.app",
-    # Add other origins as needed
-]
 
 CORS_ALLOW_ALL_ORIGINS=True
 
