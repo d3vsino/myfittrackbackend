@@ -117,9 +117,9 @@ CORS_ALLOWED_ORIGIN_REGEXS = [
 # CORS settings
 CORS_ALLOWED_ORIGINS = [
     "https://myfittrack.vercel.app",
-    
     # Add other origins as needed
 ]
+CORS_ALLOW_CREDENTIALS = True
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
