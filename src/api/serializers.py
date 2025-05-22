@@ -1,12 +1,30 @@
 from rest_framework import serializers
 from .models import CustomUser, CalorieLog, ChatSession, ChatMessage
 
-def macro_split(calories):
-    if not calories:
-        return None, None, None
-    protein_g = round((calories * 0.30) / 4, 1)
-    fat_g = round((calories * 0.25) / 9, 1)
-    carb_g = round((calories * 0.45) / 4, 1)
+def macro_split(calories, weight_kg, goal='maintain'):
+    protein_factors = {
+        'lose': 2.0,
+        'maintain': 1.3,
+        'gain': 1.8,
+    }
+    protein_factor = protein_factors.get(goal, 1.3)
+    
+    # Protein grams based on body weight and goal
+    protein_g = round(weight_kg * protein_factor, 1)
+    
+    # Calculate calories left after protein calories
+    remaining_calories = calories - (protein_g * 4)
+    if remaining_calories < 0:
+        remaining_calories = 0
+    
+    # Split remaining calories into fat and carbs (25% fat, 75% carbs)
+    fat_calories = remaining_calories * 0.25
+    carb_calories = remaining_calories * 0.75
+    
+    # Convert fat and carb calories to grams
+    fat_g = round(fat_calories / 9, 1)
+    carb_g = round(carb_calories / 4, 1)
+    
     return protein_g, fat_g, carb_g
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -79,9 +97,9 @@ class RegisterSerializer(serializers.ModelSerializer):
 
         # Macronutrients
         macros = {
-            'maintenance': macro_split(maintenance),
-            'gain': macro_split(gain),
-            'loss': macro_split(loss),
+        'maintenance': macro_split(maintenance, weight, 'maintain'),
+        'gain': macro_split(gain, weight, 'gain'),
+        'loss': macro_split(loss, weight, 'lose'),
         }
 
         # Build user instance
