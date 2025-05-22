@@ -110,10 +110,14 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+CORS_ALLOW_ALL_ORIGINS=False
+CORS_ALLOWED_ORIGIN_REGEXS = [
+    r"^capacitor:\/\/localhost$",
+]
 # CORS settings
 CORS_ALLOWED_ORIGINS = [
-    "https://myfittrackfrontend.vercel.com/",
-    r"^capacitor:\/\/localhost$"  
+    "https://myfittrackfrontend.vercel.com",
+    
     # Add other origins as needed
 ]
 
