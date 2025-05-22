@@ -27,6 +27,7 @@ def macro_split(calories, weight_kg, goal='maintain'):
     
     return protein_g, fat_g, carb_g
 
+
 class RegisterSerializer(serializers.ModelSerializer):
     calorie_goal_type = serializers.ChoiceField(
         choices=[('maintain', 'Maintain'), ('gain', 'Gain'), ('lose', 'Lose')],
@@ -70,17 +71,17 @@ class RegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         calorie_goal_type = validated_data.pop('calorie_goal_type')
         password = validated_data.pop('password')
-
+    
         # Extract user metrics
         age = validated_data.get('age')
         gender = validated_data.get('gender')
         height = validated_data.get('height_cm')
         weight = validated_data.get('weight_kg')
         activity_level = validated_data.get('activity_level')
-
+    
         # Calculate BMR (Mifflin-St Jeor)
         bmr = 10 * weight + 6.25 * height - 5 * age + (5 if gender == 'male' else -161)
-
+    
         activity_map = {
             'sedentary': 1.2,
             'light': 1.375,
@@ -89,19 +90,19 @@ class RegisterSerializer(serializers.ModelSerializer):
             'super': 1.9,
         }
         activity_multiplier = activity_map.get(activity_level, 1.2)
-
+    
         # Calorie goals
         maintenance = bmr * activity_multiplier
         gain = maintenance + 300
         loss = maintenance - 300
-
-        # Macronutrients
+    
+        # Macronutrients (match keys with calorie_goal_type: maintain/gain/lose)
         macros = {
-        'maintenance': macro_split(maintenance, weight, 'maintain'),
-        'gain': macro_split(gain, weight, 'gain'),
-        'loss': macro_split(loss, weight, 'lose'),
+            'maintain': macro_split(maintenance, weight, 'maintain'),
+            'gain': macro_split(gain, weight, 'gain'),
+            'lose': macro_split(loss, weight, 'lose'),
         }
-
+    
         # Build user instance
         user = CustomUser(**validated_data)
         user.set_password(password)
@@ -109,33 +110,41 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.maintenance_calories = maintenance
         user.gain_calories = gain
         user.loss_calories = loss
-
+    
         user.current_calorie_goal = {
             'maintain': maintenance,
             'gain': gain,
             'lose': loss
         }[calorie_goal_type]
-
+    
+        # Map keys from calorie_goal_type to DB field prefixes
+        macro_fields = {
+            'maintain': 'maintenance',
+            'gain': 'gain',
+            'lose': 'loss',
+        }
+    
         # Set all macros
-        for goal in ['maintenance', 'gain', 'loss']:
-            protein, fat, carbs = macros[goal]
-            setattr(user, f'{goal}_protein', protein)
-            setattr(user, f'{goal}_fat', fat)
-            setattr(user, f'{goal}_carbs', carbs)
-
+        for key, prefix in macro_fields.items():
+            protein, fat, carbs = macros[key]
+            setattr(user, f'{prefix}_protein', protein)
+            setattr(user, f'{prefix}_fat', fat)
+            setattr(user, f'{prefix}_carbs', carbs)
+    
         # Set current macro goal
         current_macros = macros[calorie_goal_type]
         user.current_protein_goal, user.current_fat_goal, user.current_carbs_goal = current_macros
-
-        # Optionally mark profile as complete (optional logic)
+    
+        # Optionally mark profile as complete
         user.profile_complete = all([
             validated_data.get('first_name'),
             validated_data.get('last_name'),
             age, gender, height, weight, activity_level
         ])
-
+    
         user.save()
         return user
+
 
 
 class CalorieLogSerializer(serializers.ModelSerializer):
