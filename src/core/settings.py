@@ -114,9 +114,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 CORS_ALLOW_ALL_ORIGINS=False
-CORS_ALLOWED_ORIGIN_REGEXS = [
-    r"^capacitor:\/\/localhost$",
-]
+
 # CORS settings
 CORS_ALLOWED_ORIGINS = [
     "https://myfittrack.vercel.app", # my frontend web link
