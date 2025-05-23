@@ -137,7 +137,7 @@ class AiView(APIView):
         )
         messages = [{
             "role": "system",
-            "content": f"You are a helpful nutritionist. {user_details} Respond concisely and personally and don't think."
+            "content": f"You are a helpful nutritionist, don't think and these are user details: {user_details} Respond concisely and personally."
         }]
         for msg in ChatMessage.objects.filter(session=session).order_by('timestamp'):
             messages.append({
