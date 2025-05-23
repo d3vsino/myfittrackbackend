@@ -65,11 +65,9 @@ class MacroFromImageView(APIView):
         if not image_file:
             return Response({"error": "No image provided."}, status=400)
 
-        # Convert image to base64
         image_bytes = image_file.read()
         base64_image = base64.b64encode(image_bytes).decode()
 
-        # Build Together API payload
         payload = {
             "model": "meta-llama/Llama-Vision-Free",
             "messages": [
