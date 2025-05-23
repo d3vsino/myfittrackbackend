@@ -25,7 +25,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ["https://my-fit-track.onrender.com/"]
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -47,9 +47,9 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -111,15 +111,19 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 
+
+
+CORS_ALLOW_ALL_ORIGINS=False
 CORS_ALLOWED_ORIGIN_REGEXS = [
-    r"^capacitor:\/\/localhost$"
+    r"^capacitor:\/\/localhost$",
 ]
 # CORS settings
 CORS_ALLOWED_ORIGINS = [
-    "https://myfittrackfrontend.vercel.com",
-    
-    # Add other origins as needed
+    "https://myfittrack.vercel.app", # my frontend web link
+    "https://localhost", # this is for the android app
 ]
+
+CORS_ALLOW_CREDENTIALS = True
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
@@ -156,8 +160,11 @@ SIMPLE_JWT = {
     'SIGNING_KEY': SECRET_KEY,
 }
 
-
 REST_FRAMEWORK = {
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
+    ),
+    'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),

@@ -1,13 +1,28 @@
 from rest_framework import serializers
 from .models import CustomUser, CalorieLog, ChatSession, ChatMessage
 
-def macro_split(calories):
-    if not calories:
-        return None, None, None
-    protein_g = round((calories * 0.30) / 4, 1)
-    fat_g = round((calories * 0.25) / 9, 1)
-    carb_g = round((calories * 0.45) / 4, 1)
+def macro_split(calories, weight_kg, goal='maintain'):
+    protein_factors = {
+        'lose': 2.0,
+        'maintain': 1.3,
+        'gain': 1.8,
+    }
+    protein_factor = protein_factors.get(goal, 1.3)
+    
+    protein_g = round(weight_kg * protein_factor, 1)
+    
+    remaining_calories = calories - (protein_g * 4)
+    if remaining_calories < 0:
+        remaining_calories = 0
+    
+    fat_calories = remaining_calories * 0.25
+    carb_calories = remaining_calories * 0.75
+    
+    fat_g = round(fat_calories / 9, 1)
+    carb_g = round(carb_calories / 4, 1)
+    
     return protein_g, fat_g, carb_g
+
 
 class RegisterSerializer(serializers.ModelSerializer):
     calorie_goal_type = serializers.ChoiceField(
@@ -52,17 +67,15 @@ class RegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         calorie_goal_type = validated_data.pop('calorie_goal_type')
         password = validated_data.pop('password')
-
-        # Extract user metrics
+    
         age = validated_data.get('age')
         gender = validated_data.get('gender')
         height = validated_data.get('height_cm')
         weight = validated_data.get('weight_kg')
         activity_level = validated_data.get('activity_level')
-
-        # Calculate BMR (Mifflin-St Jeor)
+    
         bmr = 10 * weight + 6.25 * height - 5 * age + (5 if gender == 'male' else -161)
-
+    
         activity_map = {
             'sedentary': 1.2,
             'light': 1.375,
@@ -71,53 +84,54 @@ class RegisterSerializer(serializers.ModelSerializer):
             'super': 1.9,
         }
         activity_multiplier = activity_map.get(activity_level, 1.2)
-
-        # Calorie goals
+    
         maintenance = bmr * activity_multiplier
         gain = maintenance + 300
         loss = maintenance - 300
-
-        # Macronutrients
+    
         macros = {
-            'maintenance': macro_split(maintenance),
-            'gain': macro_split(gain),
-            'loss': macro_split(loss),
+            'maintain': macro_split(maintenance, weight, 'maintain'),
+            'gain': macro_split(gain, weight, 'gain'),
+            'lose': macro_split(loss, weight, 'lose'),
         }
-
-        # Build user instance
+    
         user = CustomUser(**validated_data)
         user.set_password(password)
         user.bmr = bmr
         user.maintenance_calories = maintenance
         user.gain_calories = gain
         user.loss_calories = loss
-
+    
         user.current_calorie_goal = {
             'maintain': maintenance,
             'gain': gain,
             'lose': loss
         }[calorie_goal_type]
-
-        # Set all macros
-        for goal in ['maintenance', 'gain', 'loss']:
-            protein, fat, carbs = macros[goal]
-            setattr(user, f'{goal}_protein', protein)
-            setattr(user, f'{goal}_fat', fat)
-            setattr(user, f'{goal}_carbs', carbs)
-
-        # Set current macro goal
+    
+        macro_fields = {
+            'maintain': 'maintenance',
+            'gain': 'gain',
+            'lose': 'loss',
+        }
+    
+        for key, prefix in macro_fields.items():
+            protein, fat, carbs = macros[key]
+            setattr(user, f'{prefix}_protein', protein)
+            setattr(user, f'{prefix}_fat', fat)
+            setattr(user, f'{prefix}_carbs', carbs)
+    
         current_macros = macros[calorie_goal_type]
         user.current_protein_goal, user.current_fat_goal, user.current_carbs_goal = current_macros
-
-        # Optionally mark profile as complete (optional logic)
+    
         user.profile_complete = all([
             validated_data.get('first_name'),
             validated_data.get('last_name'),
             age, gender, height, weight, activity_level
         ])
-
+    
         user.save()
         return user
+
 
 
 class CalorieLogSerializer(serializers.ModelSerializer):

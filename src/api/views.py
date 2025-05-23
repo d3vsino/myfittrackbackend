@@ -19,9 +19,8 @@ from django.conf import settings
 
 # Create your views here.
 
-
 class RegisterView(APIView):
-    permission_classes = []  # Allow any
+    permission_classes = [] 
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
@@ -117,8 +116,7 @@ class AiView(APIView):
 
         if not user_input:
             return Response({"error": "No message provided"}, status=status.HTTP_400_BAD_REQUEST)
-
-        # 1. Get or create session
+            
         if session_id:
             try:
                 session = ChatSession.objects.get(id=session_id, user=user)
@@ -128,8 +126,6 @@ class AiView(APIView):
             session = ChatSession.objects.create(user=user, title=user_input)
             session_id = str(session.id)
 
-        # 2. Fetch chat history for Together model
-        
         user_data = RegisterSerializer(user).data
         user_details = (
             f"User details: Name: {user_data.get('first_name', '')} {user_data.get('last_name', '')}, "
@@ -151,10 +147,8 @@ class AiView(APIView):
                 "content": msg.message
             })
 
-        # 3. Add current user message
         messages.append({"role": "user", "content": user_input})
 
-        # 4. Send to Together
         headers = {
             "Authorization": f"Bearer {settings.TOGETHER_API_KEY}",
             "Content-Type": "application/json"
@@ -172,7 +166,6 @@ class AiView(APIView):
 
         ai_reply = res.json()["choices"][0]["message"]["content"]
 
-        # 5. Save both messages
         ChatMessage.objects.create(session=session, is_user=True, message=user_input)
         ChatMessage.objects.create(session=session, is_user=False, message=ai_reply)
 
@@ -194,11 +187,9 @@ class CalorieLogViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        # Return only logs belonging to the logged-in user
         return CalorieLog.objects.filter(user=self.request.user).order_by('-date')
 
     def perform_create(self, serializer):
-        # Set the user to the logged-in user automatically
         serializer.save(user=self.request.user)
 
 
@@ -206,7 +197,6 @@ class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # Use RegisterSerializer to return all macro and calorie fields
         serializer = RegisterSerializer(request.user)
         return Response(serializer.data)
 
@@ -215,48 +205,15 @@ class UserProfileView(APIView):
         goal = request.data.get('calorie_goal_type', None)
         if goal:
             instance.calorie_goal_type = goal
-            # Match current_calorie_goal to the selected goal value
             if goal == 'maintain':
                 instance.current_calorie_goal = instance.maintenance_calories
             elif goal == 'gain':
                 instance.current_calorie_goal = instance.gain_calories
             elif goal == 'lose':
                 instance.current_calorie_goal = instance.loss_calories
-        # Update other fields as normal
+
         serializer = RegisterSerializer(instance, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=400)
-
-
-class FoodSearchAPIView(APIView):
-    def get(self, request):
-        query = request.GET.get('q')
-        if not query:
-            return Response({'error': 'Missing search query (q)'}, status=status.HTTP_400_BAD_REQUEST)
-
-        url = 'https://api.spoonacular.com/food/products/search'
-        params = {
-            'query': query,
-            'apiKey': settings.SPOONACULAR_API_KEY,
-            'number': 10
-        }
-
-        try:
-            spoon_response = requests.get(url, params=params)
-            data = spoon_response.json()
-
-            results = [
-                {
-                    'id': item['id'],
-                    'title': item['title'],
-                    'image': item.get('image', '')
-                }
-                for item in data.get('products', [])
-            ]
-
-            return Response({'results': results}, status=spoon_response.status_code)
-
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
