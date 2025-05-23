@@ -117,9 +117,8 @@ CORS_ALLOW_ALL_ORIGINS=False
 
 
 CORS_ALLOWED_ORIGINS = [
-    "https://myfittrack.vercel.app",
-    "capacitor://localhost",
-    "https://localhost",
+    "https://myfittrack.vercel.app", # my frontend web link
+    "https://localhost", # this is for the android app
 ]
 
 CORS_ALLOW_CREDENTIALS = True
