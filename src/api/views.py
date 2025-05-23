@@ -137,7 +137,7 @@ class AiView(APIView):
         )
         messages = [{
             "role": "system",
-            "content": f"You are a helpful nutritionist. {user_details} Respond concisely and personally."
+            "content": f"You are a helpful nutritionist. {user_details} Respond concisely and personally and don't think."
         }]
         for msg in ChatMessage.objects.filter(session=session).order_by('timestamp'):
             messages.append({
@@ -152,7 +152,7 @@ class AiView(APIView):
             "Content-Type": "application/json"
         }
         data = {
-            "model": "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
+            "model": "deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free",
             "messages": messages,
             "temperature": 0.5,
             "max_tokens": 1024
